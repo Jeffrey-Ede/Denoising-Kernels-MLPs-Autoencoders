@@ -343,7 +343,7 @@ class Micrograph_Autoencoder(object):
         self.inputs = img_ph
         self.outputs = outputs
 
-    def preprocess(self, img):
+    def preprocess(self, img, pad_width=0):
 
         img[np.isnan(img)] = 0.
         img[np.isinf(img)] = 0.
@@ -352,7 +352,10 @@ class Micrograph_Autoencoder(object):
 
         img /= np.mean(img)
 
-        return np.reshape(img.astype(np.float32), (160, 160, 1))
+        img = np.pad(img, pad_width=pad_width, mode='reflect').reshape(
+            img.shape[0]+2*pad_width,img.shape[1]+2*pad_width,1)
+
+        return img.astype(np.float32)
 
     def denoise_crop(self, crop, preprocess=True, scaling=True, postprocess=True):
 
@@ -399,7 +402,7 @@ class Micrograph_Autoencoder(object):
         if preprocess:
             img = self.preprocess(img, pad_width=overlap)
 
-        len = 512-2*overlap
+        len = cropsize-2*overlap
         len0 = len1 = len
         for x in range(0, img.shape[1], len):
 
@@ -411,7 +414,7 @@ class Micrograph_Autoencoder(object):
                     if img.shape[2] - y <= cropsize:
                         y = img.shape[2] - cropsize
 
-                        crop = img[:, x:(x+512), y:(y+512), :]
+                        crop = img[:, x:(x+cropsize), y:(y+cropsize), :]
                         offset = np.min(crop)
                         scale = 1. / (np.mean(crop) - offset)
 
