@@ -3,9 +3,9 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import os
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
-"""For reading denoising autoencoder learning curves"""
+"""For reading restoring autoencoder learning curves"""
 
 take_ln = True
 moving_avg = True
