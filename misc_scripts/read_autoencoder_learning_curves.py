@@ -12,7 +12,7 @@ moving_avg = True
 save = True
 save_val = False
 window_size = 5000
-dataset_num = 1
+dataset_num = 16
 type = 'TEM'
 mean_from = 000
 remove_repeats = True #Caused by starting from the same counter multiple times
@@ -108,7 +108,7 @@ if save_val:
     save_loc = (log_loc+"val_iters.npy")
     np.save(save_loc, val_iters)
 
-plt.plot(losses_iters, np.log(losses) if take_ln else losses)
-plt.plot(val_iters, np.log(val_losses) if take_ln else val_losses)
-plt.show()
+#plt.plot(losses_iters, np.log(losses) if take_ln else losses)
+#plt.plot(val_iters, np.log(val_losses) if take_ln else val_losses)
+#plt.show()
 
