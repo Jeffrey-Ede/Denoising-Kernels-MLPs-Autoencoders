@@ -535,18 +535,18 @@ class Micrograph_Autoencoder(object):
 
 if __name__ == '__main__':
 
-    loc = r'G:\noise-removal-kernels-STEM\autoencoder\16\input-45000.tif'
-    img = imread(loc, mode='F')
-    img = 233*img[:160, :160]
+    num = 64
+    locs = ['G:/noise-removal-kernels-TEM+STEM/examples/orig/'+str(i)+'.tif' for i in range(1, 6)]
+    dst = 'G:/noise-removal-kernels-TEM+STEM/examples/filtered/'+str(num)+'/'
 
-    ckpt_loc = 'G:/noise-removal-kernels-TEM/autoencoder/16/model/'
+    ckpt_loc = 'G:/noise-removal-kernels-TEM+STEM/autoencoder/'+str(num)+'/model/'
     nn = Micrograph_Autoencoder(checkpoint_loc=ckpt_loc,
-                                visible_cuda='1',
-                                encoding_features=16)
+                                visible_cuda='0',
+                                encoding_features=num)
 
-    nn_img = nn.denoise_crop(img)
-    disp(img)
-    disp(nn_img)
+    for i, loc in enumerate(locs, 1):
+        img = imread(loc, mode='F')
+        img = img[:160, :160]
 
-    print(img)
-    print(nn_img)
+        nn_img = nn.denoise_crop(img)
+        Image.fromarray(nn_img).save( dst+str(i)+'.tif' )
