@@ -559,7 +559,7 @@ class RunConfig(tf.contrib.learn.RunConfig):
         return ', '.join(
             '%s=%r' % (k, v) for (k, v) in six.iteritems(ordered_state))
 
-class Micrograph_Autoencoder(object):
+class Kernels_and_MLPS(object):
     '''Class to access all the TEM and STEM autoencoders'''
 
     def __init__(self, 
@@ -698,19 +698,21 @@ class Micrograph_Autoencoder(object):
 
 if __name__ == '__main__':
 
-    loc = r'G:\noise-removal-kernels-STEM\autoencoder\16\input-45000.tif'
-    img = imread(loc, mode='F')
-    img = 233*img[:160, :160]
+    depth = 3
+    width = 7
+    num = 3
+    locs = ['G:/noise-removal-kernels-TEM+STEM/examples/orig/'+str(i)+'.tif' for i in range(1, 6)]
+    dst = 'G:/noise-removal-kernels-TEM+STEM/examples/kernels+mlps/'
 
-    ckpt_loc = "G:/noise-removal-kernels-TEM/results/3/model/"
-    nn = Micrograph_Autoencoder(ckpt_loc=ckpt_loc,
-                                visible_cuda='1',
-                                depth=3,
-                                width=5)
+    ckpt_loc = 'G:/noise-removal-kernels-TEM+STEM/results/'+str(num)+'/model/'
+    nn = Kernels_and_MLPS(ckpt_loc=ckpt_loc,
+                            visible_cuda='1',
+                            depth=depth,
+                            width=width)
 
-    nn_img = nn.denoise(img)
-    disp(img)
-    disp(nn_img)
+    for i, loc in enumerate(locs, 1):
+        img = imread(loc, mode='F')
+        img = img[:160, :160]
 
-    print(img)
-    print(nn_img)
+        nn_img = nn.denoise(img)
+        Image.fromarray(nn_img).save( dst+'d'+str(depth)+'w'+str(width)+'/'+str(i)+'.tif' )
