@@ -88,7 +88,7 @@ val_skip_n = 10
 
 save_result_every_n_batches = 50000
 
-def architecture(input, encoding_features):
+def architecture(input, encoding_features, encoding, decode_switch):
 
     phase = True
 
@@ -169,31 +169,36 @@ def architecture(input, encoding_features):
     a = strided_conv_block(a, 256, 2)
 
     a = strided_conv_block(a, encoding_features, 1)
+    latent = a
 
-    a = deconv_block(a, 256)
-    a = deconv_block(a, 128)
-    a = deconv_block(a, 64, batch_norm_on=False)
+    def decode(a):
+        a = deconv_block(a, 256)
+        a = deconv_block(a, 128)
+        a = deconv_block(a, 64, batch_norm_on=False)
 
-    a = slim.conv2d(
-                inputs=a,
-                num_outputs=1,
-                kernel_size=3,
-                padding="SAME",
-                activation_fn=None,
-                weights_initializer=None,
-                biases_initializer=None)
-    #a = _instance_norm(a)
+        a = slim.conv2d(
+                    inputs=a,
+                    num_outputs=1,
+                    kernel_size=3,
+                    padding="SAME",
+                    activation_fn=None,
+                    weights_initializer=None,
+                    biases_initializer=None)
+        return a
 
-    return a
+    a = decode(a)
+    decoding = decode(encoding)
+
+    return a, latent, decoding
 
 
-def experiment(img, encoding_features):
+def experiment(img, encoding_features, encoding, decode_switch): #switch True means latent placeholder. Default False
 
     imgs = tf.reshape(img, [-1, cropsize, cropsize, 1])
 
-    outputs = architecture(img, encoding_features)
+    outputs, latent, decoding = architecture(img, encoding_features, encoding, decode_switch)
 
-    return outputs
+    return outputs, latent, decoding
 
 def flip_rotate(img):
     """Applies a random flip || rotation to the image, possibly leaving it unchanged"""
@@ -330,7 +335,7 @@ class Micrograph_Autoencoder(object):
 
         img_ph = list([tf.placeholder(tf.float32, shape=(cropsize, cropsize, 1), name='img')])
 
-        outputs = experiment(img_ph, encoding_features)
+        outputs, latent, decoding = experiment(img_ph, encoding_features, encoding, decode_switch)
 
         sess =  tf.Session(config=sess_config)
         sess.run(tf.initialize_variables(tf.all_variables()))
@@ -342,6 +347,8 @@ class Micrograph_Autoencoder(object):
         self.sess = sess
         self.inputs = img_ph
         self.outputs = outputs
+        self.latent = latent
+        self.decoding = decoding
 
     def preprocess(self, img, pad_width=0):
 
@@ -356,6 +363,51 @@ class Micrograph_Autoencoder(object):
             img.shape[0]+2*pad_width,img.shape[1]+2*pad_width,1)
 
         return img.astype(np.float32)
+
+    def compress(self, crop, scaling=True, preprocess=True):
+
+        if scaling:
+            offset = np.min(crop)
+            scale = np.mean(crop) - offset
+            
+            if scale:
+                crop = (crop-offset) / scale
+            else:
+                crop.fill(1.)
+
+        latent = self.sess.run(self.latent, 
+                               feed_dict={self.inputs[0]: 
+                                        self.preprocess(crop) if preprocess else crop})
+
+        if scaling:
+            return latent, scale, offset
+        else:
+            return latent
+
+    def decompress(self, crop, scale=1, offset=0, postprocess=True):
+
+        pred = self.sess.run(self.decoding, 
+                             feed_dict={self.inputs[0]: 
+                                        self.preprocess(crop) if preprocess else crop})
+
+        if scaling:
+            pred = scale*pred+offset if scale else pred*offset/np.mean(pred)
+
+        if postprocess:
+            pred = pred.reshape((cropsize, cropsize))
+
+        return pred
+
+    def save_latent(self, latent, loc, name):
+
+        np.save(loc+name+".npy", latent)
+
+        return
+
+
+    def load_latent(self, file):
+        return np.load(file)
+
 
     def denoise_crop(self, crop, preprocess=True, scaling=True, postprocess=True):
 
