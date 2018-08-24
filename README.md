@@ -1,43 +1,52 @@
 # Denoising-Kernels-MLPs-Autoencoders
 
+Denoising kernels, multilayer perceptrons and autoencoders for electron microscopy.
+
 This repository is in the works. A paper, more code, examples and more neural networks will be published here soon (by around the end of August).
 
-Repository for the paper <- add paper
+## Example Usage 
 
-Denoising kernels, multilayer perceptrons and autoencoders for electron microscopy
+Example applications of autoencoders to compression/decompression and noise removal and kernels/multilayer perceptrons to noise removal are provided in the examples. Each of the example scripts demonstrates how a network only needs to be loaded once to be used for inference multiple times.
 
-Fully trained autoencoders are available [here](https://drive.google.com/open?id=13_xQvTOJqYu4WoEUF5lUiM4hAkYX4yM3).
+## Download
 
-Fully trained denoising kernels and MLPs are available [here](https://drive.google.com/open?id=1sweKWAL9quwAqIclgfM2d0Ia2-rgmu0Y)
+To get the training and inference scripts, simply copy the files from or clone this repository:
 
-Kerenel MLP files are labelled with with d<x>w<y>. These indicate the depths and widths of the kernels and MLPs the file stores parameters for. depth = hidden layers+1 so d1w3 is a simple kernel and input width 3 whereas d4w5 is a multilayer perceptron with 3 hidden layers and input width 5. 
-
-##Example Usage 
-```python
-"""
-import numpy as np
-from apply_autoencoders import Denoiser, disp
-
-#Create a 1000x1000 image from random numbers for demonstration
-#Try replacing this with your own image!
-img = np.random.rand(1500, 1500)
-
-#Initialize the denoising neural network
-noise_remover = Denoiser()
-
-#Denoise a 512x512 crop from the image
-crop = img[:512,:512]
-denoised_crop = noise_remover.denoise_crop(crop)
-
-#Denoise the entire image
-denoised_img = noise_remover.denoise(img)
-
-disp(crop) #Crop before denoising
-disp(denoised_crop) #Crop after denoising
-disp(img) #Image before denoising
-disp(denoised_img) #Image after denoising
-"""
-'''
-
-Note that this repository is in the works!
 ```
+git clone https://github.com/Jeffrey-Ede/Electron-Micrograph-Denoiser.git
+cd Electron-Micrograph-Denoiser
+```
+
+The last saved checkpoints for our fully trained autoencoders are available [here](https://drive.google.com/open?id=13_xQvTOJqYu4WoEUF5lUiM4hAkYX4yM3).
+
+The last saved checlpoints for our fully trained kernels and multilayer perceptrons are available [here](https://drive.google.com/open?id=1sweKWAL9quwAqIclgfM2d0Ia2-rgmu0Y).
+
+You will see that kernel and multilayer perceptron checkpoint files are labelled with with d<x>w<y>. These indicate the depths and widths of the kernels and MLPs the file stores parameters for. depth = hidden layers+1 so d1w3 is a simple kernel and input width 3 whereas d4w5 is a multilayer perceptron with 3 hidden layers and input width 5.
+
+## Dependencies
+
+This neural network was trained using TensorFlow and requires it and other common python libraries. Most of these libraries come with modern python distributions by default. If you don't have some of these libraries, they can be installed using pip or another package manager. 
+
+Libraries you need for both training and inference:
+
+* tensorFlow
+* numpy
+* cv2
+* functools
+* itertools
+* collections
+* six
+* os
+
+For training you also need:
+
+* argparse
+* random
+* scipy
+* Image
+
+The network was scripted for python 3.6 using Windows 10. Small adjustments may need to be made for other environments or operating systems.
+
+## Training
+
+To continue training the neural networks; either from scratch or to fine-tune the fully trained ones we provide, you will need to adjust some of the variables at the top of the training file. Specifically, variables indicating the location of your datasets and locations to save logs and checkpoints to.
