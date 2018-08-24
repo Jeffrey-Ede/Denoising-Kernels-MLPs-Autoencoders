@@ -8,6 +8,8 @@ This repository is in the works. A paper, more code, examples and more neural ne
 
 Example applications of autoencoders to compression/decompression and noise removal and kernels/multilayer perceptrons to noise removal are provided in the examples. Each of the example scripts demonstrates how a network only needs to be loaded once to be used for inference multiple times.
 
+Example applications of the every autoencoder, kernel and multilayer perceptron are provided as an appendix in the paper.
+
 ## Download
 
 To get the training and inference scripts, simply copy the files from or clone this repository:
