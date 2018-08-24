@@ -13,8 +13,8 @@ Example applications of autoencoders to compression/decompression and noise remo
 To get the training and inference scripts, simply copy the files from or clone this repository:
 
 ```
-git clone https://github.com/Jeffrey-Ede/Electron-Micrograph-Denoiser.git
-cd Electron-Micrograph-Denoiser
+git clone https://github.com/Jeffrey-Ede/Denoising-Kernels-MLPs-Autoencoders.git
+cd Denoising-Kernels-MLPs-Autoencoders
 ```
 
 The last saved checkpoints for our fully trained autoencoders are available [here](https://drive.google.com/open?id=13_xQvTOJqYu4WoEUF5lUiM4hAkYX4yM3).
