@@ -8,7 +8,6 @@ img = np.random.rand(1000, 1000)
 #Initialize the autoencoder. 
 #We are using a feature depth 16 autoencoder in this example
 ckpt_loc = "my/checkpoint/location/for/feature/depth/16/"
-ckpt_loc = "G:/noise-removal-kernels-TEM/autoencoder/16/model/"
 feature_depth = 16
 nn = Micrograph_Autoencoder(ckpt_loc=ckpt_loc, encoding_features=feature_depth)
 

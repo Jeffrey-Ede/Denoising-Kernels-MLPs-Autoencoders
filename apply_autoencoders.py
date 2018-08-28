@@ -378,41 +378,66 @@ class Micrograph_Autoencoder(object):
             return np.pad(img, pad_width=pad_width, mode='reflect').reshape(
                 img.shape[0]+2*pad_width,img.shape[1]+2*pad_width,1).astype(np.float32)
 
-    def compress(self, crop, scaling=True, preprocess=True, return_scaling=False):
+    def compress(self, img, scaling=True, preprocess=True, return_scaling=False):
 
-        if scaling:
-            offset = np.min(crop)
-            scale = np.mean(crop) - offset
+        latents = []
+        scales = []
+        offsets = []
+        for i in range(img.shape[0]//160):
+            for j in range(img.shape[1]//160):
+                crop = img[i:(i+160), j:(j+160)]
+
+                if scaling:
+                    offset = np.min(crop)
+                    scale = np.mean(crop) - offset
             
-            if scale:
-                crop = (crop-offset) / scale
-            else:
-                crop.fill(1.)
+                    if scale:
+                        crop = (crop-offset) / scale
+                    else:
+                        crop.fill(1.)
 
-        latent = self.sess.run(self.latent, 
-                               feed_dict={self.inputs[0]: 
-                                        self.preprocess(crop) if preprocess else crop,
-                                        self.decode_switch: np.bool(False),
-                                        self.encoding: self.dummy_encoding})
+                latent = self.sess.run(self.latent, 
+                                       feed_dict={self.inputs[0]: 
+                                                self.preprocess(crop) if preprocess else crop,
+                                                self.decode_switch: np.bool(False),
+                                                self.encoding: self.dummy_encoding})
+
+                latents.append(latent)
+                scales.append(scale)
+                offsets.append(offsets)
+
+        if img.size > 160**2:
+            latent = np.concatenate(tuple(latents), axis=0)
+        else:
+            latent = latents[0]
 
         if scaling and return_scaling:
-            return latent, scale, offset
+            return latent, scales, offsets
         else:
             return latent
 
     def decompress(self, latent, scale=1, offset=0, postprocess=True, scaling=None):
 
-        pred = self.sess.run(self.decoding, 
-                             feed_dict={self.inputs[0]: self.dummy_crop,
-                                        self.decode_switch: np.bool(False),
-                                        self.encoding: latent})
+        side = int(np.sqrt(latent.size))
+        img = np.zeros((side, side))
+        count = 0
+        for i in range(side//160):
+            for j in range(side//160):
 
-        if scaling:
-            scale, offset = scaling
-            pred = scale*pred+offset if scale else pred*offset/np.mean(pred)
+                _latent = latent[count:(count+1), :, :, :]
+                pred = self.sess.run(self.decoding, 
+                                     feed_dict={self.inputs[0]: self.dummy_crop,
+                                                self.decode_switch: np.bool(False),
+                                                self.encoding: _latent})
 
-        if postprocess:
-            pred = pred.reshape((cropsize, cropsize))
+                if scaling:
+                    scale, offset = scaling[count]
+                    pred = scale*pred+offset if scale else pred*offset/np.mean(pred)
+
+                if postprocess:
+                    pred = pred.reshape((cropsize, cropsize))
+
+                count += 1
 
         return pred
 
