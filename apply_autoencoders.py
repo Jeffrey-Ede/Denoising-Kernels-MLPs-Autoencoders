@@ -362,7 +362,7 @@ class Micrograph_Autoencoder(object):
         self.latent = latent
         self.encoding = encoding
 
-    def preprocess(self, img, pad_width=0):
+    def preprocess(self, img, pad_width=0, with_batch_dim=False):
 
         img[np.isnan(img)] = 0.
         img[np.isinf(img)] = 0.
@@ -371,10 +371,12 @@ class Micrograph_Autoencoder(object):
 
         img /= np.mean(img)
 
-        img = np.pad(img, pad_width=pad_width, mode='reflect').reshape(
-            img.shape[0]+2*pad_width,img.shape[1]+2*pad_width,1)
-
-        return img.astype(np.float32)
+        if with_batch_dim:
+            return np.pad(img, pad_width=pad_width, mode='reflect').reshape(
+                1, img.shape[0]+2*pad_width,img.shape[1]+2*pad_width,1).astype(np.float32)
+        else: 
+            return np.pad(img, pad_width=pad_width, mode='reflect').reshape(
+                img.shape[0]+2*pad_width,img.shape[1]+2*pad_width,1).astype(np.float32)
 
     def compress(self, crop, scaling=True, preprocess=True, return_scaling=False):
 
@@ -470,7 +472,7 @@ class Micrograph_Autoencoder(object):
         dims = img.shape
 
         if preprocess:
-            img = self.preprocess(img, pad_width=overlap)
+            img = self.preprocess(img, pad_width=overlap, with_batch_dim=True)
 
         len = cropsize-2*overlap
         len0 = len1 = len
@@ -484,7 +486,7 @@ class Micrograph_Autoencoder(object):
                     if img.shape[2] - y <= cropsize:
                         y = img.shape[2] - cropsize
 
-                        crop = img[:, x:(x+cropsize), y:(y+cropsize), :]
+                        crop = np.squeeze(img[:, x:(x+cropsize), y:(y+cropsize), :], axis=0)
                         offset = np.min(crop)
                         scale = 1. / (np.mean(crop) - offset)
 
@@ -513,7 +515,7 @@ class Micrograph_Autoencoder(object):
                         contributions[(x+overlap-used_overlap):(x+cropsize-(overlap-used_overlap)),
                                       (y+overlap-used_overlap):(y+cropsize-(overlap-used_overlap))] += 1
 
-                    crop = img[:, x:(x+cropsize), y:(y+cropsize), :]
+                    crop = np.squeeze(img[:, x:(x+cropsize), y:(y+cropsize), :], axis=0)
                     offset = np.min(crop)
                     scale = 1. / (np.mean(crop) - offset)
 
@@ -544,7 +546,7 @@ class Micrograph_Autoencoder(object):
                 if img.shape[2] - y <= cropsize:
                     y = img.shape[2] - cropsize
 
-                    crop = img[:, x:(x+cropsize), y:(y+cropsize), :]
+                    crop = np.squeeze(img[:, x:(x+cropsize), y:(y+cropsize), :], axis=0)
                     offset = np.min(crop)
                     scale = 1. / (np.mean(crop) - offset)
 
@@ -570,7 +572,7 @@ class Micrograph_Autoencoder(object):
                     contributions[(x+overlap-used_overlap):(x+cropsize-(overlap-used_overlap)),
                                   (y+overlap-used_overlap):(y+cropsize-(overlap-used_overlap))] += 1
 
-                crop = img[:, x:(x+cropsize), y:(y+cropsize), :]
+                crop = np.squeeze(img[:, x:(x+cropsize), y:(y+cropsize), :], axis=0)
                 offset = np.min(crop)
                 scale = 1. / (np.mean(crop) - offset)
 
