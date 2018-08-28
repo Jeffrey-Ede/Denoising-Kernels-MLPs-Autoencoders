@@ -172,33 +172,36 @@ def architecture(input, encoding_features, encoding, decode_switch):
     latent = a
 
     def decode(a):
-        a = deconv_block(a, 256)
-        a = deconv_block(a, 128)
-        a = deconv_block(a, 64, batch_norm_on=False)
 
-        a = slim.conv2d(
-                    inputs=a,
+        b = deconv_block(a, 256)
+            
+        b = deconv_block(b, 128)
+        b = deconv_block(b, 64, batch_norm_on=False)
+
+        b = slim.conv2d(
+                    inputs=b,
                     num_outputs=1,
                     kernel_size=3,
                     padding="SAME",
                     activation_fn=None,
                     weights_initializer=None,
                     biases_initializer=None)
-        return a
+        return b
 
+    a = tf.cond(decode_switch, lambda: a, lambda: encoding)
+    
     a = decode(a)
-    decoding = decode(encoding)
 
-    return a, latent, decoding
+    return a, latent
 
 
 def experiment(img, encoding_features, encoding, decode_switch): #switch True means latent placeholder. Default False
 
     imgs = tf.reshape(img, [-1, cropsize, cropsize, 1])
 
-    outputs, latent, decoding = architecture(img, encoding_features, encoding, decode_switch)
+    outputs, latent = architecture(img, encoding_features, encoding, decode_switch)
 
-    return outputs, latent, decoding
+    return outputs, latent
 
 def flip_rotate(img):
     """Applies a random flip || rotation to the image, possibly leaving it unchanged"""
@@ -318,9 +321,12 @@ class Micrograph_Autoencoder(object):
     '''Class to access all the TEM and STEM autoencoders'''
 
     def __init__(self, 
-                 checkpoint_loc="//flexo.ads.warwick.ac.uk/Shared41/Microscopy/Jeffrey-Ede/models/denoiser-multi-gpu-13/model",
+                 ckpt_loc=None,
                  visible_cuda=None,
                  encoding_features=16):
+
+        if not ckpt_loc:
+            raise "Must provide checkpoint location"
 
         if visible_cuda:
             os.environ["CUDA_VISIBLE_DEVICES"] = visible_cuda
@@ -334,21 +340,27 @@ class Micrograph_Autoencoder(object):
             gpu_options=tf.GPUOptions(force_gpu_compatible=True))
 
         img_ph = list([tf.placeholder(tf.float32, shape=(cropsize, cropsize, 1), name='img')])
+        decode_switch = tf.placeholder(tf.bool, name='decode_switch')
+        encoding = tf.placeholder(tf.float32, shape=(1, 20, 20, encoding_features), name='encoding')
 
-        outputs, latent, decoding = experiment(img_ph, encoding_features, encoding, decode_switch)
+        outputs, latent = experiment(img_ph, encoding_features, encoding, decode_switch)
 
         sess =  tf.Session(config=sess_config)
         sess.run(tf.initialize_variables(tf.all_variables()))
 
         #print(tf.all_variables())
         saver = tf.train.Saver()
-        saver.restore(sess, tf.train.latest_checkpoint(checkpoint_loc))
+        saver.restore(sess, tf.train.latest_checkpoint(ckpt_loc))
+
+        self.dummy_encoding = np.random.rand(1, 20, 20, encoding_features)
+        self.dummy_crop = np.random.rand(cropsize, cropsize, 1)
 
         self.sess = sess
         self.inputs = img_ph
-        self.outputs = outputs
+        self.outputs = self.decoding = outputs
+        self.decode_switch = decode_switch
         self.latent = latent
-        self.decoding = decoding
+        self.encoding = encoding
 
     def preprocess(self, img, pad_width=0):
 
@@ -364,7 +376,7 @@ class Micrograph_Autoencoder(object):
 
         return img.astype(np.float32)
 
-    def compress(self, crop, scaling=True, preprocess=True):
+    def compress(self, crop, scaling=True, preprocess=True, return_scaling=False):
 
         if scaling:
             offset = np.min(crop)
@@ -377,20 +389,24 @@ class Micrograph_Autoencoder(object):
 
         latent = self.sess.run(self.latent, 
                                feed_dict={self.inputs[0]: 
-                                        self.preprocess(crop) if preprocess else crop})
+                                        self.preprocess(crop) if preprocess else crop,
+                                        self.decode_switch: np.bool(False),
+                                        self.encoding: self.dummy_encoding})
 
-        if scaling:
+        if scaling and return_scaling:
             return latent, scale, offset
         else:
             return latent
 
-    def decompress(self, crop, scale=1, offset=0, postprocess=True):
+    def decompress(self, latent, scale=1, offset=0, postprocess=True, scaling=None):
 
         pred = self.sess.run(self.decoding, 
-                             feed_dict={self.inputs[0]: 
-                                        self.preprocess(crop) if preprocess else crop})
+                             feed_dict={self.inputs[0]: self.dummy_crop,
+                                        self.decode_switch: np.bool(False),
+                                        self.encoding: latent})
 
         if scaling:
+            scale, offset = scaling
             pred = scale*pred+offset if scale else pred*offset/np.mean(pred)
 
         if postprocess:
@@ -424,7 +440,9 @@ class Micrograph_Autoencoder(object):
 
         pred = self.sess.run(self.outputs, 
                              feed_dict={self.inputs[0]: 
-                                        self.preprocess(crop) if preprocess else crop})
+                                        self.preprocess(crop) if preprocess else crop,
+                                        self.decode_switch: np.bool(True),
+                                        self.encoding: self.dummy_encoding})
 
         if scaling:
             pred = scale*pred+offset if scale else pred*offset/np.mean(pred)
@@ -592,8 +610,8 @@ if __name__ == '__main__':
     dst = 'G:/noise-removal-kernels-TEM+STEM/examples/filtered/'+str(num)+'/'
 
     ckpt_loc = 'G:/noise-removal-kernels-TEM+STEM/autoencoder/'+str(num)+'/model/'
-    nn = Micrograph_Autoencoder(checkpoint_loc=ckpt_loc,
-                                visible_cuda='0',
+    nn = Micrograph_Autoencoder(ckpt_loc=ckpt_loc,
+                                visible_cuda='1',
                                 encoding_features=num)
 
     for i, loc in enumerate(locs, 1):
@@ -601,4 +619,10 @@ if __name__ == '__main__':
         img = img[:160, :160]
 
         nn_img = nn.denoise_crop(img)
-        Image.fromarray(nn_img).save( dst+str(i)+'.tif' )
+        disp(nn_img)
+        c = nn.compress(img)
+        print(c.shape)
+        d = nn.decompress(c)
+        disp(d)
+        print(d.shape)
+        #Image.fromarray(nn_img).save( dst+str(i)+'.tif' )
