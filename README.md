@@ -2,11 +2,13 @@
 
 This repository is for the paper "Autoencoders, Kernels, and Multilayer Perceptrons for Electron Micrograph Restoration and Compression".
 
+## Examples
+
+Example applications of the every autoencoder, kernel and multilayer perceptron are provided as an appendix in the paper.
+
 ## Example Usage 
 
 Example applications of autoencoders to compression/decompression and noise removal and kernels/multilayer perceptrons to noise removal are provided in `example-compress-decompress.py`, `example-autoencoder-denoise.py` and `example-kernel-or-MLP-denoise`. Each of the example scripts demonstrates that networks only needs to be loaded once to be used for inference multiple times.
-
-Example applications of the every autoencoder, kernel and multilayer perceptron are provided as an appendix in the paper.
 
 ## Download
 
