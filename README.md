@@ -1,8 +1,6 @@
 # Denoising-Kernels-MLPs-Autoencoders
 
-Denoising kernels, multilayer perceptrons and autoencoders for electron microscopy.
-
-This repository is in the works. A paper, more code, examples and more neural networks will be published here soon (by around the end of August).
+This repository is for the paper "Autoencoders, Kernels, and Multilayer Perceptrons for Electron Micrograph Restoration and Compression".
 
 ## Example Usage 
 
