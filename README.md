@@ -1,6 +1,6 @@
 # Denoising-Kernels-MLPs-Autoencoders
 
-This repository is for the paper "Autoencoders, Kernels, and Multilayer Perceptrons for Electron Micrograph Restoration and Compression".
+This repository is for the [paper](https://arxiv.org/abs/1808.09916) "Autoencoders, Kernels, and Multilayer Perceptrons for Electron Micrograph Restoration and Compression".
 
 ## Examples
 
