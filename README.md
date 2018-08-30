@@ -23,7 +23,7 @@ The last saved checkpoints for our fully trained autoencoders are available [her
 
 The last saved checlpoints for our fully trained kernels and multilayer perceptrons are available [here](https://drive.google.com/open?id=1sweKWAL9quwAqIclgfM2d0Ia2-rgmu0Y).
 
-You will see that kernel and multilayer perceptron checkpoint files are labelled with with d<x>w<y>. These indicate the depths and sizes of the kernels and MLPs the file stores parameters for. depth = hidden layers+1 so d1w3 is a simple kernel of input size 3 whereas d4w5 is a multilayer perceptron with 3 hidden layers and input size 5.
+Our kernel and multilayer perceptron checkpoint files are labelled d(depth)w(input size). These indicate the depths and sizes of the kernels and MLPs the file stores parameters for. depth = hidden layers+1 so d1w3 is a simple kernel of input size 3 whereas d3w5 is a multilayer perceptron with 2 hidden layers and input size 5.
 
 ## Dependencies
 
